@@ -24,9 +24,11 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    std::string socket_path = std::string(getenv("XDG_RUNTIME_DIR")) + "/desktop-manager/desktop-manager.sock";
+
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
-    strcpy(addr.sun_path, "/tmp/desktop_manager.sock"); // match daemon
+    strcpy(addr.sun_path, socket_path.c_str()); 
 
     if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
         perror("connect");

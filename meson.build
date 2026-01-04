@@ -7,7 +7,6 @@ project('DesktopManagerCLI',
 )
 
 incdirs = [
-    include_directories('include'),
 ]
 
 project_root = meson.current_source_dir()

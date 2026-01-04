@@ -1,34 +1,64 @@
 {
-  description = "A Nix-flake-based development environment";
+  description = "DesktopManagerCLI flake with devShell and build derivation";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
   };
 
-  outputs = { self , nixpkgs ,... }: let
-    # system should match the system you are running on
-    system = "x86_64-linux";
-  in {
-    devShells."${system}".default = let
-      pkgs = import nixpkgs {
-        inherit system;
-      };
-    in pkgs.mkShell {
-      packages = with pkgs; [
+  outputs = { self, nixpkgs }: let
+    systems = [ "x86_64-linux" "aarch64-linux" ];
+    forAllSystems = nixpkgs.lib.genAttrs systems;
+  in
+  {
+    # Development shells
+    devShells = forAllSystems (system:
+      let
+        pkgs = import nixpkgs { inherit system; };
+      in
+      {
+        default = pkgs.mkShell {
+          packages = with pkgs; [];
 
-      ];
+          buildInputs = with pkgs; [
+            meson
+            ninja
+            pkg-config
+            python3
+          ];
 
-      buildInputs = with pkgs; [
-        meson
-        pkg-config
-        cmake
-        ninja
-        python3
-      ];
+          shellHook = ''
+            echo "Entered DesktopManagerCLI dev environment for ${system}"
+          '';
+        };
+      }
+    );
 
-      shellHook = ''
-        echo "Entered dev env"
-      '';
-    };
+    # Packages / build derivation
+    packages = forAllSystems (system:
+      let
+        pkgs = import nixpkgs { inherit system; };
+      in
+      {
+        desktop-manager-cli = pkgs.stdenv.mkDerivation {
+          pname = "DesktopManagerCLI";
+          version = "1.0.0";
+
+          src = self;
+
+          nativeBuildInputs = with pkgs; [
+            meson
+            ninja
+            pkg-config
+          ];
+
+          buildInputs = with pkgs; [
+            python3
+          ];
+        };
+      }
+    );
+
+    # Default package for `nix run .`
+    defaultPackage = self.packages.${builtins.currentSystem}.desktop-manager-cli;
   };
 }

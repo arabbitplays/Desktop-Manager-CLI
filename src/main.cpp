@@ -10,10 +10,13 @@ int main(int argc, char** argv) {
         std::cerr << "Usage: mydaemon-cli <command>\n";
         return 1;
     }
-
+    
     std::string command = "";
     for (u_int32_t i = 1; i < argc; i++) {
         std::string arg = argv[i];
+
+        if (arg.starts_with("--"))
+            continue;
         command += arg + " ";
     }
 
@@ -24,8 +27,14 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    std::string socket_path = std::string(getenv("XDG_RUNTIME_DIR")) + "/desktop-manager/desktop-manager.sock";
+    std::string socket_path = "";
+    if (argc > 1 && std::string(argv[1]) == "--dev") {
+        socket_path = "/tmp/desktop-manager-dev.sock";
+    } else {
+        socket_path = std::string(getenv("XDG_RUNTIME_DIR")) + "/desktop-manager/desktop-manager.sock";
+    }
 
+    
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, socket_path.c_str()); 
@@ -34,6 +43,8 @@ int main(int argc, char** argv) {
         perror("connect");
         return 1;
     }
+
+    std::cout << "Sending command '" + command + "' to socket " + socket_path << std::endl; 
 
     // send command
     write(sock, command.c_str(), command.size());

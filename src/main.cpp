@@ -1,3 +1,4 @@
+#include <ostream>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
@@ -34,7 +35,6 @@ int main(int argc, char** argv) {
         socket_path = std::string(getenv("XDG_RUNTIME_DIR")) + "/desktop-manager/desktop-manager.sock";
     }
 
-    
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, socket_path.c_str()); 
@@ -49,6 +49,18 @@ int main(int argc, char** argv) {
     // send command
     write(sock, command.c_str(), command.size());
     write(sock, "\n", 1);
+
+    
+    while (true) {
+        char buf[256];
+        int n = read(sock, buf, sizeof(buf) - 1);
+        if (n > 0) {
+            buf[n] = 0;
+            std::string response(buf);
+            std::cout << "Response:\n" << response << std::endl;
+            break;
+        }
+    }
 
     close(sock);
     return 0;
